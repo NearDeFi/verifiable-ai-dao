@@ -37,7 +37,6 @@ app.get("/", async (c) => {
     const signRes = await requestSignature({
       path: "ethereum-1",
       payload: uint8ArrayToHex(hashesToSign[0]),
-      keyType: "Ecdsa",
     });
     console.log("signRes", signRes);
 
