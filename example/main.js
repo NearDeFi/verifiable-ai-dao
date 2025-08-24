@@ -4,14 +4,14 @@ import {
   verifyNvidiaAttestation,
   makeChatRequest,
   getSignature,
-  verifySignatureLocally,
-  MODEL,
-  DEFAULT_CHAT_MESSAGE,
+  verifySignature,
+  // MODEL,
+  // DEFAULT_CHAT_MESSAGE,
 } from './confidential_ai_functions.js';
 
 dotenv.config();
 
-async function retryOperation(operation, operationName, maxRetries = 5) {
+async function retryOperation(operation, operationName, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Attempting ${operationName} (attempt ${attempt}/${maxRetries})`);
@@ -31,10 +31,10 @@ async function retryOperation(operation, operationName, maxRetries = 5) {
 }
 
 async function main() {
-  const apiKey = process.env.API_KEY || '';
+  const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    console.error('❌ API_KEY is required. Please set it in your .env file.');
+    console.error(`API_KEY is required. Please set it in your .env file.`);
     process.exit(1);
   }
   
@@ -52,35 +52,51 @@ async function main() {
     );
     
     // Verify Intel attestation
-    // TODO: No known api for this yet
+    // TODO: No known API for this yet
     // await verifyIntelAttestation(attestation.intel_quote);
 
     // Make chat request with retry
-    const chatRequest = {
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: DEFAULT_CHAT_MESSAGE }
-      ],
-      model: MODEL
-    };
-    
-    const { responseId, rawResponseData, requestForHashing } = await retryOperation(
-      () => makeChatRequest(apiKey, DEFAULT_CHAT_MESSAGE),
+    const chatResult = await retryOperation(
+      () => makeChatRequest(apiKey),
       'Make chat request'
     );
     
+    console.log('\n📋 Chat Summary:');
+    console.log(`Response ID: ${chatResult.responseId}`);
+    console.log(`Model: ${chatResult.modelName}`);
+    console.log(`Full Response: ${chatResult.fullResponse}`);
+    
     // Get signature with retry
     const signature = await retryOperation(
-      () => getSignature(apiKey, responseId),
+      () => getSignature(apiKey, chatResult.responseId),
       'Get signature'
     );
     
+    console.log('Signature:', signature);
+    
     // Verify signature with retry
-    const requestBody = JSON.stringify(requestForHashing);
-    await retryOperation(
-      () => verifySignatureLocally(signature, requestBody, rawResponseData),
+    const chatRequest = {
+      "messages": [
+        {
+          "content": "You respond with yes or no, you don't say anything else just respond with yes or no.",
+          "role": "system"
+        },
+        {
+          "content": "Is the sky blue?",
+          "role": "user"
+        }
+      ],
+      "stream": true,
+      "model": "phala/deepseek-chat-v3-0324"
+    };
+    
+    const requestBody = JSON.stringify(chatRequest);
+    const signatureValid = await retryOperation(
+      () => verifySignature(signature, attestation.signing_address, requestBody, chatResult.rawResponseData),
       'Verify signature'
     );
+    
+    console.log('Signature valid:', signatureValid);
     
   } catch (error) {
     console.error('Error:', error);
