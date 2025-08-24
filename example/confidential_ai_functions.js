@@ -67,10 +67,14 @@ async function handleStreamingChatResponse(response) {
   let fullResponse = '';
   let responseId = null;
   let modelName = null;
+  let rawResponseData = '';
 
   return new Promise((resolve, reject) => {
     response.data.on('data', (chunk) => {
-      const lines = chunk.toString().split('\n');
+      const chunkStr = chunk.toString();
+      rawResponseData += chunkStr;
+      
+      const lines = chunkStr.split('\n');
       
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -81,7 +85,7 @@ async function handleStreamingChatResponse(response) {
               responseId,
               modelName,
               fullResponse,
-              rawResponseData: fullResponse
+              rawResponseData: rawResponseData
             });
             return;
           }
