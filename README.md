@@ -23,3 +23,28 @@ near contract call-function as-read-only im-yielding-stuff.testnet get_pending_p
 
 check for finalized proposals
 near contract call-function as-read-only im-yielding-stuff.testnet get_finalized_proposals json-args {} network-config testnet now
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+deploy
+shade-agent-cli --wasm contract/target/near/contract.wasm --funding 10
+
+set manifesto
+near contract call-function as-transaction ac-sandbox.very-shady-account.testnet set_manifesto json-args '{"manifesto_text": "you only approve on gaming proposals, reject everything else"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as very-shady-account.testnet network-config testnet sign-with-seed-phrase 'ethics jazz stand net else dinosaur swim seat diagram stay olympic tilt' --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' send
+
+create proposal
+near contract call-function as-transaction ac-sandbox.very-shady-account.testnet create_proposal json-args '{"proposal_text": "give money?"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+
+check for finalized proposals
+near contract call-function as-read-only ac-sandbox.very-shady-account.testnet get_finalized_proposals json-args {} network-config testnet now

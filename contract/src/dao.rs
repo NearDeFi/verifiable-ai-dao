@@ -93,7 +93,7 @@ impl Contract {
     }
 
     pub fn agent_vote(&mut self, yield_id: CryptoHash, response: String) {
-        // Need to require agent here
+        self.require_approved_codehash();
 
         env::promise_yield_resume(&yield_id, &serde_json::to_vec(&response).unwrap());
     }

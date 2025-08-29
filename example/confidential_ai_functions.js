@@ -136,11 +136,11 @@ async function makeChatRequest(apiKey) {
     const chatRequest = {
       "messages": [
         {
-          "content": "You respond with yes or no, you don't say anything else just respond with yes or no.",
+          "content": "You are a helpful assistant.",
           "role": "system"
         },
         {
-          "content": "Is the sky blue?",
+          "content": "What is your model name?",
           "role": "user"
         }
       ],
@@ -148,16 +148,27 @@ async function makeChatRequest(apiKey) {
       "model": "phala/deepseek-chat-v3-0324"
     };
 
+    const requestBody = JSON.stringify(chatRequest);
+    const hash = crypto.createHash("sha256").update(requestBody, "utf8").digest("hex");
+    console.log("Request body hash:", hash);
+    
     const response = await axios.post(
       `${BASE_URL}/chat/completions`,
-      chatRequest,
+      requestBody, // Send the stringified body directly
       { 
         headers: getHeaders(apiKey),
-        responseType: 'stream'
+        responseType: 'stream',
+        transformRequest: x => x,
       }
     );
 
-    return await handleStreamingChatResponse(response);
+    const chatResult = await handleStreamingChatResponse(response);
+    
+    // Return the actual request body that was sent - this should match what the server receives
+    return {
+      ...chatResult,
+      requestBody: requestBody,
+    };
 
   } catch (error) {
     console.error('Failed to make chat request:', error);
@@ -210,10 +221,12 @@ function verifySignature(signature, addressFromAttestation, requestBody, respons
   
   try {
     // Hash request and response separately
+    console.log('Request body:', requestBody);
+    console.log('Response body:', responseBody);
     const requestHash = sha256(requestBody);
     const responseHash = sha256(responseBody);
     const expectedText = `${requestHash}:${responseHash}`;
-    
+
     const signatureValid = verifyEcdsaSignature(
       signature.text,  
       signature.signature,

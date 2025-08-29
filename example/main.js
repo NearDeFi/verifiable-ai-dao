@@ -75,24 +75,8 @@ async function main() {
     console.log('Signature:', signature);
     
     // Verify signature with retry
-    const chatRequest = {
-      "messages": [
-        {
-          "content": "You respond with yes or no, you don't say anything else just respond with yes or no.",
-          "role": "system"
-        },
-        {
-          "content": "Is the sky blue?",
-          "role": "user"
-        }
-      ],
-      "stream": true,
-      "model": "phala/deepseek-chat-v3-0324"
-    };
-    
-    const requestBody = JSON.stringify(chatRequest);
     const signatureValid = await retryOperation(
-      () => verifySignature(signature, attestation.signing_address, requestBody, chatResult.rawResponseData),
+      () => verifySignature(signature, attestation.signing_address, chatResult.requestBody, chatResult.rawResponseData),
       'Verify signature'
     );
     
