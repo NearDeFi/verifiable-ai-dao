@@ -14,6 +14,7 @@ pub struct Manifesto {
 pub struct FinalizedProposal {
     pub proposal_text: String,
     pub proposal_result: ProposalResult,
+    pub reasoning: String,
 }
 
 #[near(serializers = [json, borsh])]
@@ -42,6 +43,7 @@ struct AiResponse {
     manifesto_hash: String,
     proposal_hash: String,
     vote: String,
+    reasoning: String,
 }
 
 const YIELD_REGISTER: u64 = 0;
@@ -110,11 +112,16 @@ impl Contract {
                 let response_manifesto_hash = ai_response.manifesto_hash;
                 let response_proposal_hash = ai_response.proposal_hash;
                 let response_vote = ai_response.vote;
+                let response_reasoning = ai_response.reasoning;
 
+                log!("input manifesto hash: {}", response_manifesto_hash);
+                log!("internal manifesto.manifesto_hash: {}", self.manifesto.manifesto_hash);
                 require!(
                     response_manifesto_hash == self.manifesto.manifesto_hash,
                     "Manifesto hash mismatch"
                 );
+                log!("input proposal hash: {}", response_proposal_hash);
+                log!("internal proposal hash: {}", self.pending_proposals.get(&proposal_id).unwrap().proposal_hash);
                 require!(
                     response_proposal_hash
                         == self
@@ -136,6 +143,7 @@ impl Contract {
                     let finalized_proposal = FinalizedProposal {
                         proposal_text,
                         proposal_result: ProposalResult::Approved,
+                        reasoning: response_reasoning,
                     };
                     self.finalized_proposals
                         .insert(proposal_id, finalized_proposal);
@@ -146,6 +154,7 @@ impl Contract {
                     let finalized_proposal = FinalizedProposal {
                         proposal_text,
                         proposal_result: ProposalResult::Rejected,
+                        reasoning: response_reasoning,
                     };
                     self.finalized_proposals
                         .insert(proposal_id, finalized_proposal);

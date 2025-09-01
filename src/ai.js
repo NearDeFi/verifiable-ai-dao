@@ -1,264 +1,66 @@
-import axios from 'axios';
-import crypto from 'crypto';
-import { ethers } from 'ethers';
-import { generateObject } from 'ai';
+import { OpenAI } from 'openai';
 
-const BASE_URL = 'https://api.redpill.ai/v1';
-const MODEL = 'phala/deepseek-chat-v3-0324';
-const NVIDIA_ATTESTATION_URL = 'https://nras.attestation.nvidia.com/v3/attest/gpu';
+const BASE_URL = "https://cloud-api.near.ai/v1";
+const MODEL_NAME = "deepseek-chat-v3-0324";
+const systemMessage = "You are a Decentralized Autonomous Organization (DAO) agent. You are responsible for making decisions on behalf of the DAO. Each prompt will contain the manifesto you use to vote and a proposal that you will vote on. You will vote on the proposal based on the manifesto. You will provide both your vote (Approved or Rejected) and a clear explanation of your reasoning based on how the proposal aligns with the manifesto.";
 
-const manifesto = "manifesto";
-const proposal = "proposal";
 
-const message = `
-Manifesto: ${manifesto}
-Proposal: ${proposal}
-`
+export async function aiVote(manifesto, proposal) {
+  const API_KEY = process.env.AI_API_KEY;
 
-/**
- * Get headers for API requests
- */
-function getHeaders(apiKey) {
-    return {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'accept': 'application/json'
-    };
-  }
-  
-  /**
-   * Get attestation report for the model
-   */
-  async function getAttestationReport(apiKey) {  
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/attestation/report?model=${MODEL}`,
-        { headers: getHeaders(apiKey) }
-      );
-  
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get attestation report:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Verify NVIDIA attestation
-   */
-  async function verifyNvidiaAttestation(nvidiaPayload) {
-    try {
-      const response = await axios.post(
-        NVIDIA_ATTESTATION_URL,
-        nvidiaPayload,
-        {
-          headers: {
-            'accept': 'application/json',
-            'content-type': 'application/json'
+  const openai = new OpenAI({
+    baseURL: BASE_URL,
+    apiKey: API_KEY,
+  });
+
+  const userMessage = `
+  Manifesto: ${manifesto}
+  Proposal: ${proposal}
+  `
+
+  const request = {
+    model: MODEL_NAME,
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "dao_vote",
+          description: "Vote on a DAO proposal with reasoning",
+          parameters: {
+            type: "object",
+            properties: { 
+              answer: { type: "string", enum: ["Approved","Rejected"] },
+              reasoning: { type: "string", description: "Explanation for the voting decision based on the manifesto" }
+            },
+            required: ["answer", "reasoning"]
           }
         }
-      );
-  
-      // TODO Check the attestation from Nvidia is actually valid
-  
-    } catch (error) {
-      console.error('Failed to verify NVIDIA attestation:');
-      throw error;
-    }
+      }
+    ],
+    tool_choice: { type: "function", function: { name: "dao_vote" } },
+    messages: [
+      { 
+        role: "system", 
+        content: systemMessage 
+      },
+      { role: "user", content: userMessage }
+    ]
   }
-  
-  /**
-   * Handle streaming chat response
-   */
-  async function handleStreamingChatResponse(response) {
-    let fullResponse = '';
-    let responseId = null;
-    let modelName = null;
-    let rawResponseData = '';
-  
-    return new Promise((resolve, reject) => {
-      response.data.on('data', (chunk) => {
-        const chunkStr = chunk.toString();
-        rawResponseData += chunkStr;
-        
-        const lines = chunkStr.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6); // Remove 'data: ' prefix
-            
-            if (data === '[DONE]') {
-              resolve({
-                responseId,
-                modelName,
-                fullResponse,
-                rawResponseData: rawResponseData
-              });
-              return;
-            }
-            
-            try {
-              const parsed = JSON.parse(data);
-              
-              // Extract response ID from first chunk
-              if (!responseId && parsed.id) {
-                responseId = parsed.id;
-              }
-              
-              // Extract model name
-              if (!modelName && parsed.model) {
-                modelName = parsed.model;
-              }
-              
-              // Extract content from choices
-              if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
-                fullResponse += parsed.choices[0].delta.content;
-              }
-            } catch (e) {
-              // Ignore parsing errors for non-JSON lines
-            }
-          }
-        }
-      });
-  
-      response.data.on('end', () => {
-        if (!fullResponse) {
-          reject(new Error('No response received'));
-        }
-      });
-  
-      response.data.on('error', (error) => {
-        reject(error);
-      });
-    });
-  }
-  
-  /**
-   * Make a chat request using AI SDK with structured enum output
-   */
-  async function makeChatRequest(apiKey) {
-    console.log('\nMaking chat request with AI SDK');
-    
-    try {
-      const { object } = await generateObject({
-        model: MODEL,
-        output: 'enum',
-        enum: ['Approved', 'Rejected'],
-        prompt: `You are a Decentralized Autonomous Organization (DAO) agent. You are responsible for making decisions on behalf of the DAO. Each prompt will contain the manifesto you use to vote and a proposal that you will vote on. You will vote on the proposal based on the manifesto.
 
-Manifesto: ${manifesto}
-Proposal: ${proposal}
+const completion = await openai.chat.completions.create(request);
 
-Vote on this proposal based on the manifesto.`,
-        api: {
-          baseURL: BASE_URL,
-          headers: getHeaders(apiKey)
-        }
-      });
+const args = JSON.parse(completion.choices[0].message.tool_calls[0].function.arguments);
 
-      const requestBody = JSON.stringify({
-        model: MODEL,
-        output: 'enum',
-        enum: ['Approved', 'Rejected'],
-        prompt: `You are a Decentralized Autonomous Organization (DAO) agent. You are responsible for making decisions on behalf of the DAO. Each prompt will contain the manifesto you use to vote and a proposal that you will vote on. You will vote on the proposal based on the manifesto.
+// Check that vote is exactly "Approved" or "Rejected"
+if (args.answer !== "Approved" && args.answer !== "Rejected") {
+  throw new Error(`Invalid vote: "${args.answer}". Vote must be exactly "Approved" or "Rejected"`);
+}
 
-Manifesto: ${manifesto}
-Proposal: ${proposal}
+console.log("System Message:", systemMessage);
+console.log("User Message:", userMessage);
+console.log("Vote:", args.answer);
+console.log("Reasoning:", args.reasoning);
 
-Vote on this proposal based on the manifesto.`
-      });
+return args;
 
-      const hash = crypto.createHash("sha256").update(requestBody, "utf8").digest("hex");
-      console.log("Request body hash:", hash);
-      
-      return {
-        responseId: null, // AI SDK doesn't provide this directly
-        modelName: MODEL,
-        fullResponse: object, // This will be exactly "Approved" or "Rejected"
-        rawResponseData: JSON.stringify({ vote: object }),
-        requestBody: requestBody,
-      };
-
-    } catch (error) {
-      console.error('Failed to make chat request:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Get signature for a chat response
-   */
-  async function getSignature(apiKey, responseId) {
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/signature/${responseId}?model=${MODEL}&signing_algo=ecdsa`,
-        { headers: getHeaders(apiKey) }
-      );
-      
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get signature:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Verify ECDSA signature using ethers.js
-   */
-  function verifyEcdsaSignature(message, signature, signingAddress) {
-    try {
-      // Create message hash (Ethereum style with prefix)
-      const messageHash = ethers.hashMessage(message);
-  
-      // Recover address from signature
-      const recoveredAddress = ethers.recoverAddress(messageHash, signature);
-  
-      // Compare addresses (case-insensitive)
-      return recoveredAddress.toLowerCase() === signingAddress.toLowerCase();
-    } catch (error) {
-      console.error('Signature verification error:', error.message);
-      return false;
-    }
-  }
-  
-  /**
-   * Verify signature locally using proper ECDSA verification
-   * Based on near-ai-cloud-example approach
-   */
-  function verifySignature(signature, addressFromAttestation, requestBody, responseBody) {
-    console.log('\n🔍 Verifying signature locally...');
-    
-    try {
-      // Hash request and response separately
-      console.log('Request body:', requestBody);
-      console.log('Response body:', responseBody);
-      const requestHash = sha256(requestBody);
-      const responseHash = sha256(responseBody);
-      const expectedText = `${requestHash}:${responseHash}`;
-  
-      const signatureValid = verifyEcdsaSignature(
-        signature.text,  
-        signature.signature,
-        signature.signing_address
-      );
-  
-      console.log("Is signature valid?", signatureValid);
-      console.log("Singature message hash:", signature.text);
-      console.log("My message hash:", expectedText);
-      console.log("Signature address:", signature.signing_address);
-      console.log("Address from attestation:", addressFromAttestation);
-  
-      return signatureValid;
-      
-    } catch (error) {
-      console.error('❌ Signature verification error:', error.message);
-      return false;
-    }
-  }
-  
-  /**
-   * Calculate SHA256 hash
-   */
-  function sha256(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
-  }
+}

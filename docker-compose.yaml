@@ -10,7 +10,7 @@ services:
       NEAR_RPC_JSON: ${NEAR_RPC_JSON}
     platform: linux/amd64 # Explicitly set for TDX
     # shade-agent-api-image
-    image: mattdlockyer/shade-agent-api@sha256:a86e3a4300b069c08d629a38d61a3d780f7992eaf36aa505e4527e466553e2e5
+    image: mattdlockyer/shade-agent-api@sha256:555a166f4c648a579061f65000ad66c757c70881b468a1ae3b1b4cd67238f2e0
     container_name: shade-agent-api
     # DO NOT EXPOSE THE API PORT TO THE PUBLIC
     volumes:
@@ -18,10 +18,11 @@ services:
     restart: always
   shade-agent-app:
     environment:
+      AI_API_KEY: ${AI_API_KEY}
       NEXT_PUBLIC_contractId: ${NEXT_PUBLIC_contractId}
     platform: linux/amd64 # Explicitly set for TDX
     # shade-agent-app-image
-    image: pivortex/my-app@sha256:375035c858823886791152342f6e6092dd97567d0f0f3a6074f3933e035eeedb
+    image: pivortex/my-app@sha256:a780372f336ad352d34da17573bd5184947d2684213180a53312fd0e8422a02f
     container_name: shade-agent-app
     ports:
       - "3000:3000"

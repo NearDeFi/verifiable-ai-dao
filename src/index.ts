@@ -21,11 +21,13 @@ app.get("/", (c) => c.json({ message: "App is running" }));
 async function startResponder() {
   while (true) {
     await new Promise(resolve => setTimeout(resolve, 10000));
+    console.log("Looping check if registered")
   try {
     const res = await agentInfo();
     const checksum = res.checksum;
     
     if (checksum && checksum !== null && checksum !== undefined) {
+      console.log("Starting responder");
       responder();
       break;
     }

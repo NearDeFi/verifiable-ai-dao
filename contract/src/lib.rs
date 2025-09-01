@@ -6,6 +6,7 @@ use near_sdk::{
     near, require,
     store::{IterableMap, IterableSet},
     AccountId, CryptoHash, Gas, GasWeight, PanicOnDefault, PromiseError,
+    log,
 };
 
 mod collateral;

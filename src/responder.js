@@ -1,5 +1,6 @@
 import { agentCall, agentView } from "@neardefi/shade-agent-js";
 import crypto from "crypto";
+import { aiVote } from "./ai.js";
 
 export async function responder() {
     while (true) {
@@ -27,20 +28,23 @@ export async function responder() {
 
         // Respond to the first proposal
         const proposal_to_respond_to = requests[0];
-
         const yield_id = proposal_to_respond_to[0];
         const proposal_text = proposal_to_respond_to[1];
 
+        // Use verifiable LLM to vote on the proposal
+        const voteResponse = await aiVote(manifesto, proposal_text);
+        const vote = voteResponse.answer;
+        const reasoning = voteResponse.reasoning;
+
+        // Hash the proposal and manifesto
         const proposal_hash = crypto.createHash('sha256').update(proposal_text).digest('hex');
         const manifesto_hash = crypto.createHash('sha256').update(manifesto).digest('hex');
 
-        // Randomly choose between "Approved" and "Rejected"
-        const vote = Math.random() < 0.5 ? "Approved" : "Rejected";
-        
         const response = JSON.stringify({
             manifesto_hash: manifesto_hash,
             proposal_hash: proposal_hash,
-            vote: vote
+            vote: vote,
+            reasoning: reasoning
         });
 
         try {
