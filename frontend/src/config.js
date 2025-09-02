@@ -1,7 +1,5 @@
-const contractPerNetwork = {
-  testnet: "guestbook.near-examples.testnet",
-};
-
 export const NetworkId = "testnet";
-export const GuestbookNearContract = contractPerNetwork[NetworkId];
+
+// DAO Contract configuration
+export const DaoContract = "ac-sandbox.very-shady-account.testnet"; // Replace with your actual contract ID
 

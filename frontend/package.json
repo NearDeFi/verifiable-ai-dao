@@ -12,10 +12,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@near-wallet-selector/core": "9.0.2",
-    "@near-wallet-selector/meteor-wallet": "9.0.2",
-    "@near-wallet-selector/modal-ui": "9.0.2",
-    "@near-wallet-selector/react-hook": "9.0.2",
+    "@near-wallet-selector/core": "9.3.0",
+    "@near-wallet-selector/meteor-wallet": "9.3.0",
+    "@near-wallet-selector/modal-ui": "9.3.0",
+    "@near-wallet-selector/react-hook": "9.3.0",
     "bootstrap": "^5",
     "bootstrap-icons": "^1.11.3",
     "next": "15.2.1",

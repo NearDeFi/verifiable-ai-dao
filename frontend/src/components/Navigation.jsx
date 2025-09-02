@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
+import { DaoContract } from "@/config";
 
 export const Navigation = () => {
   const { signedAccountId, signIn, signOut } = useWalletSelector();
