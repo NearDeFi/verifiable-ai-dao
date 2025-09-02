@@ -6,11 +6,20 @@ use near_sdk::{
     near, require,
     store::{IterableMap, IterableSet},
     AccountId, CryptoHash, Gas, GasWeight, PanicOnDefault, PromiseError,
-    log,
+    BorshStorageKey, Promise, NearToken, PromiseOrValue,
 };
 
 mod collateral;
 mod dao;
+
+#[derive(BorshStorageKey)]
+#[near]
+pub enum StorageKey {
+    ApprovedCodehashes,
+    WorkerByAccountId,
+    PendingProposals,
+    FinalizedProposals,
+}
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
@@ -28,7 +37,7 @@ pub struct Contract {
     pub manifesto: Manifesto,
     pub pending_proposals: IterableMap<u32, ProposalRequest>,
     pub finalized_proposals: IterableMap<u32, FinalizedProposal>,
-    pub proposal_count: u32,
+    pub current_proposal_id: u32,
 }
 
 #[near]
@@ -38,27 +47,23 @@ impl Contract {
     pub fn init(owner_id: AccountId) -> Self {
         Self {
             owner_id,
-            approved_codehashes: IterableSet::new(b"a"),
-            worker_by_account_id: IterableMap::new(b"b"),
+            approved_codehashes: IterableSet::new(StorageKey::ApprovedCodehashes),
+            worker_by_account_id: IterableMap::new(StorageKey::WorkerByAccountId),
             manifesto: Manifesto {
-                manifesto_text: "".to_string(),
-                manifesto_hash: "".to_string(),
+                manifesto_text: String::from(""),
+                manifesto_hash: String::from(""),
             },
-            pending_proposals: IterableMap::new(b"p"),
-            finalized_proposals: IterableMap::new(b"f"),
-            proposal_count: 0,
+            pending_proposals: IterableMap::new(StorageKey::PendingProposals),
+            finalized_proposals: IterableMap::new(StorageKey::FinalizedProposals),
+            current_proposal_id: 0,
         }
     }
 
-    // helpers for method access control
 
     pub fn approve_codehash(&mut self, codehash: String) {
-        // !!! UPGRADE TO YOUR METHOD OF MANAGING APPROVED WORKER AGENT CODEHASHES !!!
         self.require_owner();
         self.approved_codehashes.insert(codehash);
     }
-
-    // register args see: https://github.com/mattlockyer/based-agent-template/blob/main/pages/api/register.js
 
     pub fn register_agent(
         &mut self,
@@ -74,7 +79,7 @@ impl Contract {
         let report = result.report.as_td10().unwrap();
         let report_data = format!("{}", String::from_utf8_lossy(&report.report_data));
 
-        // verify the predecessor matches the report data
+        // Verify the predecessor matches the report data
         require!(
             env::predecessor_account_id() == report_data,
             format!("predecessor_account_id != report_data: {}", report_data)
@@ -84,7 +89,7 @@ impl Contract {
         let (shade_agent_api_image, shade_agent_app_image) =
             collateral::verify_codehash(tcb_info, rtmr3);
 
-        // verify the code hashes are approved
+        // Verify the code hashes are approved
         require!(self.approved_codehashes.contains(&shade_agent_api_image));
         require!(self.approved_codehashes.contains(&shade_agent_app_image));
 
@@ -100,8 +105,6 @@ impl Contract {
         true
     }
 
-    // views
-
     pub fn get_agent(&self, account_id: AccountId) -> Worker {
         self.worker_by_account_id
             .get(&account_id)
@@ -109,13 +112,10 @@ impl Contract {
             .to_owned()
     }
 
-    // only for contract methods
-
     fn require_owner(&mut self) {
         require!(env::predecessor_account_id() == self.owner_id);
     }
 
-    /// will throw on client if worker agent is not registered with a codehash in self.approved_codehashes
     fn require_approved_codehash(&mut self) {
         let worker = self.get_agent(env::predecessor_account_id());
         require!(self.approved_codehashes.contains(&worker.codehash));

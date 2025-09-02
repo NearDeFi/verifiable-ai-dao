@@ -19,170 +19,193 @@ pub struct FinalizedProposal {
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
+pub struct ProposalRequest {
+    pub yield_id: CryptoHash,
+    pub proposal_text: String,
+}
+
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug)]
 pub enum ProposalResult {
     Approved,
     Rejected,
 }
 
-#[near(serializers = [json, borsh])]
-#[derive(Clone)]
-pub struct ProposalRequest {
-    pub yield_id: CryptoHash,
-    pub proposal_text: String,
-    pub proposal_hash: String,
+#[near(serializers = [json])]
+pub struct AiResponse {
+    proposal_id: u32,
+    proposal_hash: String,
+    manifesto_hash: String,
+    vote: ProposalResult,
+    reasoning: String,
 }
 
 #[near(serializers = [json])]
-pub enum DaoResponse {
-    Answer(ProposalResult),
-    TimeOutError,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct AiResponse {
-    manifesto_hash: String,
-    proposal_hash: String,
-    vote: String,
+pub struct DaoResponse {
+    vote: ProposalResult,
     reasoning: String,
 }
 
 const YIELD_REGISTER: u64 = 0;
+const RETURN_EXTERNAL_RESPONSE_GAS: Gas = Gas::from_tgas(50);
+const FAIL_ON_TIMEOUT_GAS: Gas = Gas::from_tgas(10);
 
 #[near]
 impl Contract {
     pub fn set_manifesto(&mut self, manifesto_text: String) {
         self.require_owner();
+
+        require!(manifesto_text.len() <= 10000, "Manifesto text needs to be under 10,000 characters");
+
         self.manifesto = Manifesto {
             manifesto_text: manifesto_text.clone(),
             manifesto_hash: hash(manifesto_text),
         };
     }
 
-    pub fn get_manifesto(&self) -> String {
-        self.manifesto.manifesto_text.clone()
-    }
-
     pub fn create_proposal(&mut self, proposal_text: String) {
-        let proposal_hash = hash(proposal_text.clone());
-        let proposal_count = self.proposal_count;
+        require!(self.manifesto.manifesto_hash != String::from(""), "Manifesto not set");
+        require!(proposal_text.len() <= 10000, "Proposal text needs to be under 10,000 characters");
 
+        let proposal_id = self.current_proposal_id;
+
+        // Create a yield promise
         let yield_promise = env::promise_yield_create(
-            "return_external_response",
-            &json!({ "proposal_id": proposal_count })
+            "return_external_response", // Function to call when the promise is resumed
+            &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
                 .to_string()
                 .into_bytes(),
-            Gas::from_tgas(10),
+            RETURN_EXTERNAL_RESPONSE_GAS,
             GasWeight::default(),
             YIELD_REGISTER,
         );
 
+        // Read the yield id from the register
         let yield_id: CryptoHash = env::read_register(YIELD_REGISTER)
             .expect("read_register failed")
             .try_into()
             .expect("conversion to CryptoHash failed");
 
+        // Create a proposal request and insert it into the pending proposals map
         let proposal_request = ProposalRequest {
             yield_id,
             proposal_text,
-            proposal_hash,
         };
 
         self.pending_proposals
-            .insert(proposal_count, proposal_request);
-        self.proposal_count += 1;
+            .insert(proposal_id, proposal_request);
+        self.current_proposal_id += 1;
 
+        // Return the yield promise
         env::promise_return(yield_promise)
     }
 
-    pub fn agent_vote(&mut self, yield_id: CryptoHash, response: String) {
+    // Function for the agent to call and resume the yield promise
+    pub fn agent_vote(&mut self, yield_id: CryptoHash, response: AiResponse) {
         self.require_approved_codehash();
 
+        require!(response.reasoning.len() <= 10000, "Reasoning needs to be under 10,000 characters");
+
+        // Verify the manifesto hash matches
+        // Will error if the manifesto is changed in between the proposal being created and the agent voting
+        require!(
+            response.manifesto_hash == self.manifesto.manifesto_hash,
+            "Manifesto hash mismatch"
+        );
+
+        // Verify the proposal exists and hash matches
+        let pending_proposal = self.pending_proposals.get(&response.proposal_id)
+            .expect("Proposal not found or already processed");
+        
+        require!(
+            response.proposal_hash == hash(pending_proposal.proposal_text.clone()),
+            "Proposal hash mismatch"
+        );
+
+        // Resume the yield promise 
         env::promise_yield_resume(&yield_id, &serde_json::to_vec(&response).unwrap());
     }
 
+    // Function called once the yield promise is resumed
     #[private]
     pub fn return_external_response(
         &mut self,
         proposal_id: u32,
-        #[callback_result] response: Result<String, PromiseError>,
-    ) -> DaoResponse {
+        proposal_text: String,
+        #[callback_result] response: Result<AiResponse, PromiseError>,
+    ) -> PromiseOrValue<DaoResponse> {
+        self.pending_proposals.remove(&proposal_id);
+
         match response {
-            Ok(response) => {
-                let ai_response: AiResponse = serde_json::from_str(&response).unwrap();
-                let response_manifesto_hash = ai_response.manifesto_hash;
-                let response_proposal_hash = ai_response.proposal_hash;
-                let response_vote = ai_response.vote;
-                let response_reasoning = ai_response.reasoning;
+            Ok(ai_response) => {
+                // Add to finalized proposals as approved or rejected and return the decision
+                match ai_response.vote {
+                    ProposalResult::Approved => {
+                        let finalized_proposal = FinalizedProposal {
+                            proposal_text,
+                            proposal_result: ProposalResult::Approved,
+                            reasoning: ai_response.reasoning.clone(),
+                        };
+                        self.finalized_proposals
+                            .insert(proposal_id, finalized_proposal);
 
-                log!("input manifesto hash: {}", response_manifesto_hash);
-                log!("internal manifesto.manifesto_hash: {}", self.manifesto.manifesto_hash);
-                require!(
-                    response_manifesto_hash == self.manifesto.manifesto_hash,
-                    "Manifesto hash mismatch"
-                );
-                log!("input proposal hash: {}", response_proposal_hash);
-                log!("internal proposal hash: {}", self.pending_proposals.get(&proposal_id).unwrap().proposal_hash);
-                require!(
-                    response_proposal_hash
-                        == self
-                            .pending_proposals
-                            .get(&proposal_id)
-                            .unwrap()
-                            .proposal_hash,
-                    "Proposal hash mismatch"
-                );
+                        PromiseOrValue::Value(DaoResponse {
+                            vote: ProposalResult::Approved,
+                            reasoning: ai_response.reasoning,
+                        })
+                    }
+                    ProposalResult::Rejected => {
+                        let finalized_proposal = FinalizedProposal {
+                            proposal_text,
+                            proposal_result: ProposalResult::Rejected,
+                            reasoning: ai_response.reasoning.clone(),
+                        };
+                        self.finalized_proposals
+                            .insert(proposal_id, finalized_proposal); // Note that proposal id may have gaps if proposals are not responded to
 
-                // Get the proposal data before removing it
-                let proposal = self.pending_proposals.get(&proposal_id).unwrap();
-                let proposal_text = proposal.proposal_text.clone();
-
-                self.pending_proposals.remove(&proposal_id);
-
-                if response_vote == "Approved" {
-                    // Add to finalized proposals as approved
-                    let finalized_proposal = FinalizedProposal {
-                        proposal_text,
-                        proposal_result: ProposalResult::Approved,
-                        reasoning: response_reasoning,
-                    };
-                    self.finalized_proposals
-                        .insert(proposal_id, finalized_proposal);
-
-                    return DaoResponse::Answer(ProposalResult::Approved);
-                } else if response_vote == "Rejected" {
-                    // Add to finalized proposals as rejected
-                    let finalized_proposal = FinalizedProposal {
-                        proposal_text,
-                        proposal_result: ProposalResult::Rejected,
-                        reasoning: response_reasoning,
-                    };
-                    self.finalized_proposals
-                        .insert(proposal_id, finalized_proposal);
-
-                    return DaoResponse::Answer(ProposalResult::Rejected);
-                } else {
-                    panic!("Invalid vote");
+                        PromiseOrValue::Value(DaoResponse {
+                            vote: ProposalResult::Rejected,
+                            reasoning: ai_response.reasoning,
+                        })
+                    }
                 }
             }
-            Err(_) => DaoResponse::TimeOutError,
+            Err(_) => {
+                // Make a call to fail_on_timeout to cause a failed receipt
+                let promise = Promise::new(env::current_account_id()).function_call(
+                    "fail_on_timeout".to_string(),
+                    vec![],
+                    NearToken::from_near(0),
+                    FAIL_ON_TIMEOUT_GAS,
+                );
+                PromiseOrValue::Promise(promise.as_return())
+            }
         }
+    }
+
+    // Function to cause a failed receipt if the proposal request times out
+    #[private]
+    pub fn fail_on_timeout(&self) {
+        env::panic_str("Proposal request timed out");
+    }
+    
+    pub fn get_manifesto(&self) -> String {
+        self.manifesto.manifesto_text.clone()
     }
 
     pub fn get_pending_proposals(
         &self,
         from_index: &Option<u32>,
         limit: &Option<u32>,
-    ) -> Vec<(CryptoHash, String)> {
+    ) -> Vec<(u32, ProposalRequest)> {
         let from = from_index.unwrap_or(0);
-        let limit = limit.unwrap_or(self.proposal_count);
+        let limit = limit.unwrap_or(self.pending_proposals.len());
 
-        (from..self.proposal_count)
+        self.pending_proposals
+            .iter()
+            .filter(|(id, _)| **id >= from)
             .take(limit as usize)
-            .filter_map(|id| {
-                self.pending_proposals
-                    .get(&id)
-                    .map(|request| (request.yield_id, request.proposal_text.clone()))
-            })
+            .map(|(id, request)| (*id, request.clone()))
             .collect()
     }
 
@@ -190,17 +213,15 @@ impl Contract {
         &self,
         from_index: &Option<u32>,
         limit: &Option<u32>,
-    ) -> Vec<FinalizedProposal> {
+    ) -> Vec<(u32, FinalizedProposal)> {
         let from = from_index.unwrap_or(0);
-        let limit = limit.unwrap_or(self.proposal_count);
+        let limit = limit.unwrap_or(self.finalized_proposals.len());
 
-        (from..self.proposal_count)
+        self.finalized_proposals
+            .iter()
+            .filter(|(id, _)| **id >= from)
             .take(limit as usize)
-            .filter_map(|id| {
-                self.finalized_proposals
-                    .get(&id)
-                    .map(|proposal| proposal.clone())
-            })
+            .map(|(id, proposal)| (*id, proposal.clone()))
             .collect()
     }
 }
@@ -211,3 +232,4 @@ fn hash(manifesto: String) -> String {
     let hash = hasher.finalize();
     encode(hash)
 }
+
