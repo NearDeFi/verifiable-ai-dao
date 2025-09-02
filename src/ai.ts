@@ -12,6 +12,10 @@ export interface VoteResult {
   reasoning: string;
 }
 
+/*
+TODO: Add verification of the AI model https://docs.near.ai/cloud/verification/
+*/
+
 export async function aiVote(manifesto: string, proposal: string): Promise<VoteResult> {
   const API_KEY = process.env.AI_API_KEY;
 

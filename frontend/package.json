@@ -1,23 +1,33 @@
 {
-  "name": "frontend",
+  "name": "guest-book",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint"
   },
   "dependencies": {
-    "ethers": "^6.11.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@near-wallet-selector/core": "9.0.2",
+    "@near-wallet-selector/meteor-wallet": "9.0.2",
+    "@near-wallet-selector/modal-ui": "9.0.2",
+    "@near-wallet-selector/react-hook": "9.0.2",
+    "bootstrap": "^5",
+    "bootstrap-icons": "^1.11.3",
+    "next": "15.2.1",
+    "react": "^18",
+    "react-dom": "^18",
+    "viem": "^2.30.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.6.0",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11",
-    "vite": "^7.0.3"
+    "@types/node": "^22.10.1",
+    "encoding": "^0.1.13",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "15.0.3",
+    "pino-pretty": "^13.0.0"
   }
 }
