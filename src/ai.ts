@@ -17,10 +17,10 @@ TODO: Add verification of the AI model https://docs.near.ai/cloud/verification/
 */
 
 export async function aiVote(manifesto: string, proposal: string): Promise<VoteResult> {
-  const API_KEY = process.env.AI_API_KEY;
+  const API_KEY = process.env.NEAR_AI_API_KEY;
 
   if (!API_KEY) {
-    throw new Error("AI_API_KEY environment variable is not set");
+    throw new Error("NEAR_AI_API_KEY environment variable is not set");
   }
 
   // Set up the OpenAI client

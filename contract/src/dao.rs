@@ -102,6 +102,7 @@ impl Contract {
 
     // Function for the agent to call and resume the yield promise
     pub fn agent_vote(&mut self, yield_id: CryptoHash, response: AiResponse) {
+        // Comment this out for local development
         self.require_approved_codehash();
 
         require!(response.reasoning.len() <= 10000, "Reasoning needs to be under 10,000 characters");
