@@ -10,12 +10,12 @@ const walletSelectorConfig = {
     networkId: "testnet",
     nodeUrl: "https://rpc.testnet.fastnear.com",
   },
-  // createAccessKeyFor: {
-  //   contractId: ContractId,
-  //   methodNames: [
-  //     "create_proposal",
-  //   ]
-  // },
+  createAccessKeyFor: {
+    contractId: ContractId,
+    methodNames: [
+      "create_proposal",
+    ]
+  },
   modules: [
     setupMeteorWallet(),
   ],
