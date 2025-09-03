@@ -148,6 +148,8 @@ The agents are now a part of the contract basically.
 
     The CLI on Linux may prompt you to enter your `sudo password`.
 
+---
+
 ## Interacting with the protocol
 
 - Set the manifesto in the contract
