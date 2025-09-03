@@ -5,91 +5,81 @@ import ProposalForm from "@/components/ProposalForm";
 import ProposalList from "@/components/ProposalList";
 import styles from "@/styles/app.module.css";
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
-import { DaoContract } from "@/config";
+import { ContractId } from "@/config";
 
 export default function Home() {
   const { signedAccountId, viewFunction, callFunction } = useWalletSelector();
   const [manifesto, setManifesto] = useState("");
   const [finalizedProposals, setFinalizedProposals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
-  useEffect(() => {
-    if (signedAccountId) {
-      loadDaoData();
-    }
-  }, [signedAccountId]);
-
+  // Load manifesto and finalized proposals
   const loadDaoData = async () => {
-    try {
-      setLoading(true);
-      
+    try {      
       // Load manifesto
       const manifestoText = await viewFunction({
-        contractId: DaoContract,
+        contractId: ContractId,
         method: "get_manifesto",
       });
       setManifesto(manifestoText);
 
       // Load finalized proposals
       const finalized = await viewFunction({
-        contractId: DaoContract,
+        contractId: ContractId,
         method: "get_finalized_proposals",
         args: { from_index: null, limit: null },
       });
       setFinalizedProposals(finalized);
+
     } catch (error) {
-      console.error("Error loading DAO data:", error);
-    } finally {
-      setLoading(false);
+      setFetchError(true);
     }
   };
 
+  // Refresh data after proposal creation
   const handleProposalCreated = () => {
-    // Refresh data after proposal creation
     loadDaoData();
   };
 
-  // Load data regardless of login status, but only if we have a contract connection
+  // Load data on page load
   useEffect(() => {
     loadDaoData();
   }, []);
-
-  // Show sign-in prompt if not logged in
-  const showSignInPrompt = !signedAccountId;
 
   return (
     <main className={styles.main}>
       <Navigation />
       <div className="container mt-4">
-        <h1>🏛️ NEAR DAO</h1>
+        <h1>🏛️ AI DAO</h1>
         
-        {showSignInPrompt && (
-          <div className="alert alert-info" role="alert">
-            <strong>👋 Welcome!</strong> You can view the DAO manifesto and previous proposals without signing in. 
-            <strong> Sign in to create new proposals.</strong>
+        {fetchError && (
+          <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">⚠️ Contract Connection Error</h4>
+            <p className="mb-0">
+              Please set the contract ID in the config.js file then refresh the page.
+            </p>
           </div>
         )}
         
-        {loading ? (
-          <div className="text-center">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        ) : (
-          <>
-            <DaoManifesto manifesto={manifesto} />
-            <ProposalForm 
-              onSubmit={handleProposalCreated}
-              contractId={DaoContract}
-              callFunction={callFunction}
-              disabled={showSignInPrompt}
-            />
-            <ProposalList 
-              finalizedProposals={finalizedProposals}
-            />
-          </>
-        )}
+        <div className="alert alert-info" role="alert">
+          <p className="mb-0"> 
+            Welcome to the AI DAO powered by Shade Agents 
+            <br />
+            Create a proposal and the verifiable AI agent will vote on it based on the DAO's manifesto
+          </p>
+        </div>
+        
+        <DaoManifesto manifesto={manifesto} />
+        <ProposalForm 
+          onSubmit={handleProposalCreated}
+          contractId={ContractId}
+          callFunction={callFunction}
+          isSignedIn={!!signedAccountId}
+          manifestoMissing={!manifesto}
+        />
+        <ProposalList 
+          finalizedProposals={finalizedProposals}
+        />
       </div>
     </main>
   );

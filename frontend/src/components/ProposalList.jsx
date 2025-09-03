@@ -1,3 +1,5 @@
+import styles from "@/styles/app.module.css";
+
 export default function ProposalList({ finalizedProposals }) {
   return (
     <div className="card mb-4">
@@ -13,10 +15,10 @@ export default function ProposalList({ finalizedProposals }) {
               .slice()
               .reverse()
               .map(([id, proposal]) => (
-              <div key={id} className="list-group-item">
+              <div key={id} className={`list-group-item ${styles.proposalItem}`}>
                 <div className="d-flex justify-content-between align-items-start">
-                  <h6 className="mb-1">Proposal #{id}</h6>
-                  <span className={`badge ${
+                  <strong>Proposal #{id}</strong>
+                  <span className={`badge fs-6 px-3 py-2 ${
                     proposal.proposal_result === 'Approved' 
                       ? 'bg-success' 
                       : 'bg-danger'

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function ProposalForm({ onSubmit, contractId, callFunction, disabled = false }) {
+export default function ProposalForm({ onSubmit, contractId, callFunction, isSignedIn = false, manifestoMissing = false }) {
   const [proposalText, setProposalText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,12 +39,14 @@ export default function ProposalForm({ onSubmit, contractId, callFunction, disab
         <h3>📝 Create New Proposal</h3>
       </div>
       <div className="card-body">
-        {disabled ? (
+        {!isSignedIn || manifestoMissing ? (
           <div className="text-center py-4">
-            <p className="text-muted mb-3">Please sign in to create proposals</p>
-            <button className="btn btn-primary" disabled>
-              Sign In Required
-            </button>
+            {manifestoMissing && (
+              <p className="text-muted mb-3">DAO manifesto has not been set yet</p>
+            )}
+            {!isSignedIn && (
+              <p className="text-muted mb-3">Please sign in to create proposals</p>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit}>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
-import { DaoContract } from "@/config";
 
 export const Navigation = () => {
   const { signedAccountId, signIn, signOut } = useWalletSelector();
@@ -11,10 +10,10 @@ export const Navigation = () => {
 
     if (signedAccountId) {
       setAction(() => signOut);
-      setLabel(`Logout ${signedAccountId}`);
+      setLabel(`Sign Out ${signedAccountId}`);
     } else {
       setAction(() => signIn);
-      setLabel("Login");
+      setLabel("Sign In");
     }
   }, [signedAccountId]);
 

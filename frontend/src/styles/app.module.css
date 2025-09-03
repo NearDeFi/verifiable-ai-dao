@@ -1,8 +1,19 @@
 .main {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   min-height: 100vh;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Increase spacing between proposal items */
+.proposalItem {
+  margin-bottom: 1.5rem !important;
+}
+
+.proposalItem:last-child {
+  margin-bottom: 0 !important;
 }
