@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { Navigation } from "@/components/Navigation";
+import { useWalletSelector } from '@near-wallet-selector/react-hook';
+import { ContractId } from "@/config";
+import Navigation from "@/components/Navigation";
 import DaoManifesto from "@/components/DaoManifesto";
 import ProposalForm from "@/components/ProposalForm";
 import ProposalList from "@/components/ProposalList";
 import styles from "@/styles/app.module.css";
-import { useWalletSelector } from '@near-wallet-selector/react-hook';
-import { ContractId } from "@/config";
 
 export default function Home() {
   const { signedAccountId, viewFunction, callFunction } = useWalletSelector();
   const [manifesto, setManifesto] = useState("");
   const [finalizedProposals, setFinalizedProposals] = useState([]);
-  const [fetchError, setFetchError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Load manifesto and finalized proposals
   const loadDaoData = async () => {
@@ -31,8 +31,11 @@ export default function Home() {
       });
       setFinalizedProposals(finalized);
 
+      // Clear any previous error messages
+      setErrorMessage("");
+
     } catch (error) {
-      setFetchError(true);
+      setErrorMessage("Contract connection error: Please set the contract ID in the config.js file then refresh the page.");
     }
   };
 
@@ -52,12 +55,9 @@ export default function Home() {
       <div className="container mt-4">
         <h1>🏛️ AI DAO</h1>
         
-        {fetchError && (
-          <div className="alert alert-danger" role="alert">
-            <h4 className="alert-heading">⚠️ Contract Connection Error</h4>
-            <p className="mb-0">
-              Please set the contract ID in the config.js file then refresh the page.
-            </p>
+        {errorMessage && (
+          <div className="alert alert-danger" role="warning">
+            <p className="mb-0">{errorMessage}</p>
           </div>
         )}
         
@@ -76,6 +76,7 @@ export default function Home() {
           callFunction={callFunction}
           isSignedIn={!!signedAccountId}
           manifestoMissing={!manifesto}
+          setErrorMessage={setErrorMessage}
         />
         <ProposalList 
           finalizedProposals={finalizedProposals}

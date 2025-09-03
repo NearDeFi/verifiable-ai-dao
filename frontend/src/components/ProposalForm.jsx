@@ -1,33 +1,39 @@
 import { useState } from "react";
 
-export default function ProposalForm({ onSubmit, contractId, callFunction, isSignedIn = false, manifestoMissing = false }) {
+export default function ProposalForm({ onSubmit, contractId, callFunction, isSignedIn = false, manifestoMissing = false, setErrorMessage }) {
   const [proposalText, setProposalText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [proposalResult, setProposalResult] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!proposalText.trim()) {
-      alert("Please enter a proposal text");
-      return;
-    }
 
     try {
       setIsSubmitting(true);
+      setProposalResult(null);
       
-      await callFunction({
+      // Create the proposal
+      const response = await callFunction({
         contractId: contractId,
         method: "create_proposal",
         args: { proposal_text: proposalText.trim() },
         gas: "300000000000000",
       });
 
+      const reasoning = response.reasoning;
+      const vote = response.vote;
+
+      // Set the proposal result
+      setProposalResult({
+        vote: vote,
+        reasoning: reasoning
+      });
+
       setProposalText("");
-      onSubmit(); // Refresh the data
-      alert("Proposal created successfully! Waiting for AI response...");
+      onSubmit();
     } catch (error) {
       console.error("Error creating proposal:", error);
-      alert("Failed to create proposal. Please try again.");
+      setErrorMessage("Failed to create proposal. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -51,9 +57,6 @@ export default function ProposalForm({ onSubmit, contractId, callFunction, isSig
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label htmlFor="proposalText" className="form-label">
-                Proposal Text
-              </label>
               <textarea
                 id="proposalText"
                 className="form-control"
@@ -76,12 +79,24 @@ export default function ProposalForm({ onSubmit, contractId, callFunction, isSig
               {isSubmitting ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Creating...
+                  Waiting for AI DAO response...
                 </>
               ) : (
                 "Submit Proposal"
               )}
             </button>
+            
+            {proposalResult && (
+              <div className="mt-3">
+                <div className={`alert ${proposalResult.vote === 'Approved' ? 'alert-success' : 'alert-danger'}`} role="alert">
+                  <h6 className="alert-heading mb-2">
+                    {proposalResult.vote === 'Approved' ? '✅ Proposal Approved' : '❌ Proposal Rejected'}
+                  </h6>
+                  <p className="mb-1"><strong>AI Reasoning:</strong></p>
+                  <p className="mb-0">{proposalResult.reasoning}</p>
+                </div>
+              </div>
+            )}
           </form>
         )}
       </div>

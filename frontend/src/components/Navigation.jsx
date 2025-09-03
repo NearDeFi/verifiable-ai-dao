@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 
-export const Navigation = () => {
+export default function Navigation() {
   const { signedAccountId, signIn, signOut } = useWalletSelector();
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
 
   useEffect(() => {
-
     if (signedAccountId) {
       setAction(() => signOut);
       setLabel(`Sign Out ${signedAccountId}`);
@@ -29,4 +28,4 @@ export const Navigation = () => {
       </div>
     </nav>
   );
-};
+}

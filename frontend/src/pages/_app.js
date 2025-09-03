@@ -10,9 +10,8 @@ const walletSelectorConfig = {
     networkId: "testnet",
     nodeUrl: "https://rpc.testnet.fastnear.com",
   },
-  // Problems here
   // createAccessKeyFor: {
-  //   contractId: DaoContract,
+  //   contractId: ContractId,
   //   methodNames: [
   //     "create_proposal",
   //   ]
