@@ -3,18 +3,26 @@
 > [!WARNING]  
 > This technology has not yet undergone a formal audit. Please conduct your own due diligence and exercise caution before integrating or relying on it in production environments.
 
-This example shows how ...
+This example is a DAO that blends NEAR smart contracts, yield-resume, Shade Agents, and verifiable AI all together.
 
-Uses verifiable ai (not actually verified yet TODO) 
-yield and resume 
+When the user makes a makes a proposal to the DAO via a function call to the smart contract on NEAR, the contract halts its execution and files a new proposal in the contract, the Shade Agent indexes this proposal and calls NEAR AI's private/verifiable AI to make a decision on the proposal based on the DAO's manifesto, then submits the decision back to the contract when it resumes its execution and stores the proposal and decision in a list of finalized proposals. 
 
-The agents are now a part of the contract basically.
+This example shows:
+- Using a NEAR smart contract with a Shade Agent.
+- Having a Shade Agent fulfill a yield-resume request.
+- A Shade Agent using verifiable AI.
+
+This is the best way to add verifiable AI to a smart contract where the agent and LLM essentially becomes a part of the contract.
+
+Please note that whilst the example uses NEAR AI's private/verifiable AI endpoints, the example does not yet actually verify the AI inside of the Shade Agent yet (this is TODO).
+
+[Agent](./src/) - [Smart Contract](./contract/) - [Frontend](./frontend/)
 
 ---
 
 ## Prerequisites
 
-- First `clone` this repository
+- First, `clone` this repository
 
     ```bash
     git clone https://github.com/NearDeFi/verifiable-ai-dao
@@ -38,7 +46,7 @@ The agents are now a part of the contract basically.
     near account create-account sponsor-by-faucet-service $ACCOUNT_ID autogenerate-new-keypair save-to-keychain network-config testnet create
     ```
 
-    replacing `example-name.testnet` with a unique account Id
+    replacing `example-name.testnet` with a unique account ID
 
 - Set up Docker if you have not already:
 
@@ -102,7 +110,7 @@ The agents are now a part of the contract basically.
 
 - Make sure the `NEXT_PUBLIC_contractId` prefix is set to `ac-proxy.` followed by your NEAR accountId
 
-- In one terminal, run the Shade Agent CLI with the wasm flag to deploy a custom contract and funding flag:
+- In one terminal, run the Shade Agent CLI with the wasm flag to deploy a custom contract and the funding flag:
 
   ```bash
   shade-agent-cli --wasm contract/target/near/contract.wasm --funding 7 
@@ -140,7 +148,7 @@ The agents are now a part of the contract basically.
 
 - Change the `NEXT_PUBLIC_contractId` prefix to `ac-sandbox.` followed by your NEAR accountId.
 
-- Run the Shade Agent CLI with the wasm flag to deploy a custom contract and funding flag
+- Run the Shade Agent CLI with the wasm flag to deploy a custom contract and the funding flag
 
     ```bash
     shade-agent-cli --wasm contract/target/near/contract.wasm --funding 7
@@ -155,7 +163,7 @@ The agents are now a part of the contract basically.
 - Set the manifesto in the contract
 
     ```bash
-    near contract call-function as-transaction <contractId> set_manifesto json-args '{"manifesto_text": "You only approve gaming related proposals, reject everything else"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as <accountId> network-config testnet sign-with-seed-phrase '<seed phrase>' --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' send
+    near contract call-function as-transaction <contractId> set_manifesto json-args '{"manifesto_text": "You only approve gaming-related proposals, reject everything else"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as <accountId> network-config testnet sign-with-seed-phrase '<seed phrase>' --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' send
     ```
 
     Replacing the <contractId> (ac-sandbox.NEAR_ACCOUNT_ID), <accountId> (NEAR_ACCOUNT_ID), <seed phrase>, and optionally the manifesto text.
