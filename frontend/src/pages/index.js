@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import { ContractId } from "@/config";
 import Navigation from "@/components/Navigation";
+import Disclaimer from "@/components/Disclaimer";
 import DaoManifesto from "@/components/DaoManifesto";
 import ProposalForm from "@/components/ProposalForm";
 import ProposalList from "@/components/ProposalList";
@@ -51,8 +52,9 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
-      <Navigation />
-      <div className="container mt-4">
+      <div className="container mt-2">
+        <Disclaimer />
+        <Navigation />
         <h1>🏛️ AI DAO</h1>
         
         {errorMessage && (
