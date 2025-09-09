@@ -67,19 +67,6 @@ impl Contract {
         require!(self.manifesto.manifesto_hash != String::from(""), "Manifesto not set");
         require!(proposal_text.len() <= 10000, "Proposal text needs to be under 10,000 characters");
 
-        let proposal_id = self.current_proposal_id;
-
-        // Create a yield promise
-        let yield_promise = env::promise_yield_create(
-            "return_external_response", // Function to call when the promise is resumed
-            &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
-                .to_string()
-                .into_bytes(),
-            RETURN_EXTERNAL_RESPONSE_GAS,
-            GasWeight::default(),
-            YIELD_REGISTER,
-        );
-
         // Read the yield id from the register
         let yield_id: CryptoHash = env::read_register(YIELD_REGISTER)
             .expect("read_register failed")
@@ -89,15 +76,24 @@ impl Contract {
         // Create a proposal request and insert it into the pending proposals map
         let proposal_request = ProposalRequest {
             yield_id,
-            proposal_text,
+            proposal_text: proposal_text.clone(),
         };
 
+        self.current_proposal_id += 1;
+        let proposal_id = self.current_proposal_id;
         self.pending_proposals
             .insert(proposal_id, proposal_request);
-        self.current_proposal_id += 1;
 
-        // Return the yield promise
-        env::promise_return(yield_promise)
+        // Create a yield promise
+        env::promise_yield_create(
+            "return_external_response", // Function to call when the promise is resumed
+            &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
+                .to_string()
+                .into_bytes(),
+            RETURN_EXTERNAL_RESPONSE_GAS,
+            GasWeight::default(),
+            YIELD_REGISTER,
+        );
     }
 
     // Function for the agent to call and resume the yield promise
