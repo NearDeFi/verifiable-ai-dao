@@ -11,17 +11,17 @@ pub struct Manifesto {
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
-pub struct FinalizedProposal {
+pub struct ProposalRequest {
+    pub yield_id: CryptoHash,
     pub proposal_text: String,
-    pub proposal_result: ProposalResult,
-    pub reasoning: String,
 }
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
-pub struct ProposalRequest {
-    pub yield_id: CryptoHash,
+pub struct FinalizedProposal {
     pub proposal_text: String,
+    pub proposal_result: ProposalResult,
+    pub reasoning: String,
 }
 
 #[near(serializers = [json, borsh])]
