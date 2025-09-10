@@ -135,37 +135,19 @@ impl Contract {
 
         match response {
             Ok(ai_response) => {
-                // Add to finalized proposals as approved or rejected and return the decision
-                match ai_response.vote {
-                    ProposalResult::Approved => {
-                        let finalized_proposal = FinalizedProposal {
-                            proposal_text,
-                            proposal_result: ProposalResult::Approved,
-                            reasoning: ai_response.reasoning.clone(),
-                        };
-                        self.finalized_proposals
-                            .insert(proposal_id, finalized_proposal);
+                // Add to finalized proposals and return the decision
+                let finalized_proposal = FinalizedProposal {
+                    proposal_text,
+                    proposal_result: ai_response.vote.clone(),
+                    reasoning: ai_response.reasoning.clone(),
+                };
+                self.finalized_proposals
+                    .insert(proposal_id, finalized_proposal);
 
-                        PromiseOrValue::Value(DaoResponse {
-                            vote: ProposalResult::Approved,
-                            reasoning: ai_response.reasoning,
-                        })
-                    }
-                    ProposalResult::Rejected => {
-                        let finalized_proposal = FinalizedProposal {
-                            proposal_text,
-                            proposal_result: ProposalResult::Rejected,
-                            reasoning: ai_response.reasoning.clone(),
-                        };
-                        self.finalized_proposals
-                            .insert(proposal_id, finalized_proposal);
-
-                        PromiseOrValue::Value(DaoResponse {
-                            vote: ProposalResult::Rejected,
-                            reasoning: ai_response.reasoning,
-                        })
-                    }
-                }
+                PromiseOrValue::Value(DaoResponse {
+                    vote: ai_response.vote,
+                    reasoning: ai_response.reasoning,
+                })
             }
             Err(_) => {
                 // Make a call to fail_on_timeout to cause a failed receipt
