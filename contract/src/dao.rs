@@ -84,7 +84,7 @@ impl Contract {
         self.pending_proposals
             .insert(proposal_id, proposal_request);
 
-        // Create a yield promise
+        // Create a yielded promise
         env::promise_yield_create(
             "return_external_response", // Function to call when the promise is resumed
             &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
@@ -119,11 +119,11 @@ impl Contract {
             "Proposal hash mismatch"
         );
 
-        // Resume the yield promise 
+        // Resume the yielded promise 
         env::promise_yield_resume(&yield_id, &serde_json::to_vec(&response).unwrap());
     }
 
-    // Function called once the yield promise is resumed
+    // Function called once the yielded promise is resolved
     #[private]
     pub fn return_external_response(
         &mut self,
@@ -158,7 +158,7 @@ impl Contract {
                             reasoning: ai_response.reasoning.clone(),
                         };
                         self.finalized_proposals
-                            .insert(proposal_id, finalized_proposal); // Note that proposal id may have gaps if proposals are not responded to
+                            .insert(proposal_id, finalized_proposal);
 
                         PromiseOrValue::Value(DaoResponse {
                             vote: ProposalResult::Rejected,
