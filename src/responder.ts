@@ -26,17 +26,17 @@ export async function responder(): Promise<void> {
         console.log("Found pending proposals amount: ", requests.length);
         console.log(requests);
 
+        // Extract the text from the oldest proposal
+        const proposal_to_respond_to: [number, ProposalRequest] = requests[0];
+        const proposal_id: number = proposal_to_respond_to[0];
+        const yield_id: string = proposal_to_respond_to[1].yield_id;
+        const proposal_text: string = proposal_to_respond_to[1].proposal_text;
+
         // Fetch the manifesto
         const manifesto: string = await agentView({
             methodName: "get_manifesto",
             args: {}
         });
-
-        // Respond to the first proposal
-        const proposal_to_respond_to: [number, ProposalRequest] = requests[0];
-        const proposal_id: number = proposal_to_respond_to[0];
-        const yield_id: string = proposal_to_respond_to[1].yield_id;
-        const proposal_text: string = proposal_to_respond_to[1].proposal_text;
 
         // Use verifiable LLM to vote on the proposal
         const voteResult: VoteResult = await aiVote(manifesto, proposal_text);
