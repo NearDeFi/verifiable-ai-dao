@@ -19,7 +19,7 @@ export async function aiVote(manifesto: string, proposal: string): Promise<VoteR
 
   // Set up the OpenAI client
   const openai = new OpenAI({
-    baseURL: "https://cloud-api.near.ai/v",
+    baseURL: "https://api.openai.com/v1",
     apiKey: process.env.NEAR_AI_API_KEY,
   });
 
