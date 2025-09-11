@@ -34,17 +34,17 @@ export async function responder(): Promise<void> {
             const proposal_text: string = proposal_to_respond_to[1].proposal_text;
 
             // Fetch the manifesto
-            const manifesto: string = await agentView({
+            const manifesto_text: string = await agentView({
                 methodName: "get_manifesto",
                 args: {}
             });
 
             // Use verifiable LLM to vote on the proposal
-            const voteResult: VoteResult = await aiVote(manifesto, proposal_text);
+            const voteResult: VoteResult = await aiVote(manifesto_text, proposal_text);
             
             // Hash the proposal and manifesto
             const proposal_hash: string = crypto.createHash('sha256').update(proposal_text).digest('hex');
-            const manifesto_hash: string = crypto.createHash('sha256').update(manifesto).digest('hex');
+            const manifesto_hash: string = crypto.createHash('sha256').update(manifesto_text).digest('hex');
 
             // Send the response to the contract
             const response = {
