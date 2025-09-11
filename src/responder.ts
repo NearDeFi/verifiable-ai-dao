@@ -26,7 +26,7 @@ export async function responder(): Promise<void> {
         console.log("Found pending proposals amount: ", requests.length);
         console.log(requests);
 
-        // Extract the text from the oldest proposal
+        // Extract the proposal text and yield id from the oldest proposal
         const proposal_to_respond_to: [number, ProposalRequest] = requests[0];
         const proposal_id: number = proposal_to_respond_to[0];
         const yield_id: string = proposal_to_respond_to[1].yield_id;
