@@ -163,7 +163,7 @@ Please note that whilst the example uses NEAR AI's private/verifiable AI endpoin
 - Set the manifesto in the contract
 
     ```bash
-    near contract call-function as-transaction <contractId> set_manifesto json-args '{"manifesto_text": "You only approve gaming-related proposals, reject everything else"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as <accountId> network-config testnet sign-with-seed-phrase '<seed phrase>' --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' send
+    near contract call-function as-transaction <contractId> set_manifesto json-args '{"manifesto_text": "This DAO only approves gaming related proposals and rejects everything else"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as <accountId> network-config testnet sign-with-seed-phrase '<seed phrase>' --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' send
     ```
 
     Replacing the <contractId> (ac-sandbox.NEAR_ACCOUNT_ID), <accountId> (NEAR_ACCOUNT_ID), <seed phrase>, and optionally the manifesto text.

@@ -55,7 +55,10 @@ impl Contract {
     pub fn set_manifesto(&mut self, manifesto_text: String) {
         self.require_owner();
 
-        require!(manifesto_text.len() <= 10000, "Manifesto text needs to be under 10,000 characters");
+        require!(
+            manifesto_text.len() <= 10000,
+            "Manifesto text needs to be under 10,000 characters"
+        );
 
         self.manifesto = Manifesto {
             manifesto_text: manifesto_text.clone(),
@@ -64,8 +67,14 @@ impl Contract {
     }
 
     pub fn create_proposal(&mut self, proposal_text: String) {
-        require!(self.manifesto.manifesto_hash != String::from(""), "Manifesto not set");
-        require!(proposal_text.len() <= 10000, "Proposal text needs to be under 10,000 characters");
+        require!(
+            self.manifesto.manifesto_hash != String::from(""),
+            "Manifesto not set"
+        );
+        require!(
+            proposal_text.len() <= 10000,
+            "Proposal text needs to be under 10,000 characters"
+        );
 
         // Read the yield id from the register
         let yield_id: CryptoHash = env::read_register(YIELD_REGISTER)
@@ -81,8 +90,7 @@ impl Contract {
 
         self.current_proposal_id += 1;
         let proposal_id = self.current_proposal_id;
-        self.pending_proposals
-            .insert(proposal_id, proposal_request);
+        self.pending_proposals.insert(proposal_id, proposal_request);
 
         // Create a yielded promise
         env::promise_yield_create(
@@ -101,7 +109,10 @@ impl Contract {
         // Comment this out for local development
         self.require_approved_codehash();
 
-        require!(response.reasoning.len() <= 10000, "Reasoning needs to be under 10,000 characters");
+        require!(
+            response.reasoning.len() <= 10000,
+            "Reasoning needs to be under 10,000 characters"
+        );
 
         // Verify the manifesto hash matches
         // Will error if the manifesto is changed in between the proposal being created and the agent voting
@@ -111,15 +122,17 @@ impl Contract {
         );
 
         // Verify the proposal exists and hash matches
-        let pending_proposal = self.pending_proposals.get(&response.proposal_id)
+        let pending_proposal = self
+            .pending_proposals
+            .get(&response.proposal_id)
             .expect("Proposal not found or already processed");
-        
+
         require!(
             response.proposal_hash == hash(pending_proposal.proposal_text.clone()),
             "Proposal hash mismatch"
         );
 
-        // Resume the yielded promise 
+        // Resume the yielded promise
         env::promise_yield_resume(&yield_id, &serde_json::to_vec(&response).unwrap());
     }
 
@@ -167,7 +180,7 @@ impl Contract {
     pub fn fail_on_timeout(&self) {
         env::panic_str("Proposal request timed out");
     }
-    
+
     pub fn get_manifesto(&self) -> String {
         self.manifesto.manifesto_text.clone()
     }
@@ -211,4 +224,3 @@ fn hash(manifesto: String) -> String {
     let hash = hasher.finalize();
     encode(hash)
 }
-

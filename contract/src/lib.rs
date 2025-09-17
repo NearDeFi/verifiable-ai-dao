@@ -5,8 +5,8 @@ use near_sdk::{
     env::{self, block_timestamp},
     near, require,
     store::{IterableMap, IterableSet},
-    AccountId, CryptoHash, Gas, GasWeight, PanicOnDefault, PromiseError,
-    BorshStorageKey, Promise, NearToken, PromiseOrValue,
+    AccountId, BorshStorageKey, CryptoHash, Gas, GasWeight, NearToken, PanicOnDefault, Promise,
+    PromiseError, PromiseOrValue,
 };
 
 mod collateral;
@@ -58,7 +58,6 @@ impl Contract {
             current_proposal_id: 0,
         }
     }
-
 
     pub fn approve_codehash(&mut self, codehash: String) {
         self.require_owner();
