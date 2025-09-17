@@ -1,8 +1,28 @@
-Copyright 2025 Proximity Labs 
+Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/LICENSE-2.0
+
+Copyright 2025 Proximity Labs
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+Additional Notices 
+
+This project integrates with the DeepSeek-V3-0324 AI model / services, which are not licensed under Apache-2.0. The use of DeepSeek is subject to its separate license and Terms of Use, which include restrictions on certain types of content, requirements for labelling AI-generated content, and other obligations you must follow.
+
+- DeepSeek License: https://deepseeklicense.github.io/  
+- DeepSeek Terms of Use: https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html  
+
+By using this project in combination with DeepSeek, you agree to abide by those Terms of Use.
+
+Third-party dependencies included under MIT, BSD-2, and Apache-2.0. See LICENSES.txt for full dependency license texts.

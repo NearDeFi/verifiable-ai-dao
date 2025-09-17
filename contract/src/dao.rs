@@ -76,6 +76,20 @@ impl Contract {
             "Proposal text needs to be under 10,000 characters"
         );
 
+        self.current_proposal_id += 1;
+        let proposal_id = self.current_proposal_id;
+
+        // Create a yielded promise
+        let yielded_promise = env::promise_yield_create(
+            "return_external_response", // Function to call when the promise is resumed
+            &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
+                .to_string()
+                .into_bytes(),
+            RETURN_EXTERNAL_RESPONSE_GAS,
+            GasWeight::default(),
+            YIELD_REGISTER,
+        );
+
         // Read the yield id from the register
         let yield_id: CryptoHash = env::read_register(YIELD_REGISTER)
             .expect("read_register failed")
@@ -88,20 +102,10 @@ impl Contract {
             proposal_text: proposal_text.clone(),
         };
 
-        self.current_proposal_id += 1;
-        let proposal_id = self.current_proposal_id;
         self.pending_proposals.insert(proposal_id, proposal_request);
 
-        // Create a yielded promise
-        env::promise_yield_create(
-            "return_external_response", // Function to call when the promise is resumed
-            &json!({ "proposal_id": proposal_id, "proposal_text": proposal_text })
-                .to_string()
-                .into_bytes(),
-            RETURN_EXTERNAL_RESPONSE_GAS,
-            GasWeight::default(),
-            YIELD_REGISTER,
-        );
+        // Return the yielded promise
+        env::promise_return(yielded_promise)
     }
 
     // Function for the agent to call and resume the yield promise

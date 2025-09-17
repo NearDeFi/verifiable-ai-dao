@@ -22,7 +22,7 @@ services:
       NEAR_AI_API_KEY: ${NEAR_AI_API_KEY}
     platform: linux/amd64 # Explicitly set for TDX
     # shade-agent-app-image
-    image: pivortex/verifiable-ai-dao@sha256:29005373330e782ff0d8d4c48b13cdd1988c652c0d1c404ab8ea205c1e2df652
+    image: pivortex/verifiable-ai-dao@sha256:a216f29757ce3f055f4ff77b9e74b5a8dcf83f99538dc7bfdcd9d31229279aea
     container_name: shade-agent-app
     ports:
       - "3000:3000"
