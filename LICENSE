@@ -25,4 +25,4 @@ This project integrates with the DeepSeek-V3-0324 AI model / services, which are
 
 By using this project in combination with DeepSeek, you agree to abide by those Terms of Use.
 
-Third-party dependencies included under MIT, BSD-2, and Apache-2.0. See LICENSES.txt for full dependency license texts.
+This project depends on third-party packages under various open-source licenses, including MIT, BSD, Apache-2.0, MPL-2.0, and LGPL-3.0-or-later. A full list of third-party licenses is available on request.
