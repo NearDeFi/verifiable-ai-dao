@@ -35,7 +35,7 @@ export async function aiVote(manifesto: string, proposal: string): Promise<VoteR
   // Create the request object that will be sent to the AI model
   // Uses a tool so the vote can only be "Approved" or "Rejected"
   const request: ChatCompletionCreateParamsNonStreaming = {
-    model: "deepseek-chat-v3-0324",
+    model: "deepseek-ai/DeepSeek-V3.1",
     tools: [
       {
         type: "function",
