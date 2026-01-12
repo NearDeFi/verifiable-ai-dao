@@ -207,22 +207,3 @@ You may obtain a copy of the License at:
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-Additional Notices
-
-1. Integration with DeepSeek
-
-This project integrates with the DeepSeek-V3-0324 AI model and related services.
-DeepSeek is not licensed under Apache-2.0. Its use is subject to a separate
-license and Terms of Use, which include restrictions on certain types of
-content, requirements for labelling AI-generated content, and other obligations.
-
-- DeepSeek License: https://deepseeklicense.github.io/  
-- DeepSeek Terms of Use: https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html  
-
-By using this project in combination with DeepSeek, you agree to abide by the
-applicable DeepSeek Terms of Use.
-
-2. Third-Party Dependencies
-
-This project depends on third-party packages under various open-source licenses, including 0BSD, Apache-2.0, BSD-2-Clause, BSD-3-Clause, CC-BY-4.0, CC0-1.0, ISC, LGPL-3.0-or-later, MIT, MPL-2.0, Python-2.0, Unicode-3.0, Zlib. A full list of dependencies and their licenses can be found in the sbom.cyclonedx.json file.
